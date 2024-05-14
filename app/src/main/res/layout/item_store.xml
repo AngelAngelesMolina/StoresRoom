@@ -20,7 +20,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:background="@android:color/darker_gray" />
+            android:background="@android:color/darker_gray" />
 
         <TextView
             android:id="@+id/tvName"
@@ -38,9 +38,11 @@
 
         <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbFavorite"
-            android:button="@drawable/ic_favorite_border"
+            android:button="@drawable/states_cb_favorite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:checked="false"
+            app:buttonTint="@color/white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
