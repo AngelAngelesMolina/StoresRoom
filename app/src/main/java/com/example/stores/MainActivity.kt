@@ -17,8 +17,8 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         setContentView(mBinding.root)
 
         mBinding.btnSave.setOnClickListener {
-            val store = Store(name = mBinding.etName.text.toString().trim())
-            mAdapter.add(store)
+            val storeEntity = StoreEntity(name = mBinding.etName.text.toString().trim())
+            mAdapter.add(storeEntity)
         }
 
         setupRv()
@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity(), OnClickListener {
 
     }
 
-    override fun onClick(store: Store) {
+    override fun onClick(storeEntity: StoreEntity) {
         TODO("Not yet implemented")
     }
 }
