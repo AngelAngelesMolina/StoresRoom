@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.stores.databinding.ActivityMainBinding
 import java.util.concurrent.LinkedBlockingQueue
 
-class MainActivity : AppCompatActivity(), OnClickListener {
+class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
     private lateinit var mBinding: ActivityMainBinding
 
     private lateinit var mAdapter: StoreAdapter
@@ -17,18 +17,32 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         mBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(mBinding.root)
 
-        mBinding.btnSave.setOnClickListener {
+        /*mBinding.btnSave.setOnClickListener {
             val storeEntity = StoreEntity(name = mBinding.etName.text.toString().trim())
             Thread {
                 StoreApplication.database.storeDao().addStore(storeEntity)
             }.start()
 
             mAdapter.add(storeEntity)
+        }*/
+        mBinding.fab.setOnClickListener {
+            launchEditFragment()
         }
-
         setupRv()
 
     }
+
+    private fun launchEditFragment() {
+        val fragment = EditStoreFragment()
+        val fragmentManager = supportFragmentManager
+        val fragmentTransaction = fragmentManager.beginTransaction()
+
+        fragmentTransaction.add(R.id.containerMain, fragment)
+        fragmentTransaction.addToBackStack(null)
+        fragmentTransaction.commit()
+        hideFab()
+    }
+
 
     private fun getStores() {
         //MANEJO DE HILOS NATIVOS EN KT
@@ -68,10 +82,14 @@ class MainActivity : AppCompatActivity(), OnClickListener {
 
     override fun onDeleteStore(storeEntity: StoreEntity) {
         val queue = LinkedBlockingQueue<StoreEntity>()
-        Thread{
+        Thread {
             StoreApplication.database.storeDao().deleteStore(storeEntity)
             queue.add(storeEntity)
         }.start()
         mAdapter.delete(queue.take())
+    }
+
+    override fun hideFab(isVisible: Boolean) {
+        if (isVisible) mBinding.fab.show() else mBinding.fab.hide()
     }
 }
