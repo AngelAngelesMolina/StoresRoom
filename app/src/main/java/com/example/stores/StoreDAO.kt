@@ -8,8 +8,8 @@ import androidx.room.Update
 
 
 @Dao
-interface StoreDAO {
-    @Query("SELECT * FROM StoreEntity")
+interface StoreDao {
+    @Query("SELECT  * FROM StoreEntity")
     fun getAllStores(): MutableList<StoreEntity>
     @Insert
     fun addStore( storeEntity: StoreEntity)
