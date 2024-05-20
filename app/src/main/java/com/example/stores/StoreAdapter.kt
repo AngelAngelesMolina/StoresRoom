@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.stores.databinding.ItemStoreBinding
 
 class StoreAdapter(
@@ -27,6 +29,12 @@ class StoreAdapter(
             setListener(store)
             binding.tvName.text = store.name
             binding.cbFavorite.isChecked = store.isFavorite
+
+            Glide.with(mContext)
+                .load(store.photoUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .centerCrop()
+                .into(binding.imgPhoto)
         }
     }
 
@@ -39,17 +47,20 @@ class StoreAdapter(
     }
 
     fun add(storeEntity: StoreEntity) {
-        stores.add(storeEntity)
-        notifyDataSetChanged()
+        if (!stores.contains(storeEntity)) {
+            stores.add(storeEntity)
+            notifyItemInserted(stores.size - 1)
+        }
     }
 
     fun update(store: StoreEntity) {
         val index = stores.indexOf(store)
         if (index != -1) {
-            stores.set(index, store)
+            stores[index] = store
             notifyItemChanged(index)
         }
     }
+
     fun delete(store: StoreEntity) {
         val index = stores.indexOf(store)
         if (index != -1) {
@@ -63,7 +74,7 @@ class StoreAdapter(
         fun setListener(storeEntity: StoreEntity) {
             with(binding.root) {
                 setOnClickListener {
-                    listener.onClick(storeEntity)
+                    listener.onClick(storeEntity.id)
                 }
 
                 setOnLongClickListener {
