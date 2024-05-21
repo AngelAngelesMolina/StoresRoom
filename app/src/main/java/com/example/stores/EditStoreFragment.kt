@@ -2,6 +2,7 @@ package com.example.stores
 
 import android.content.Context
 import android.os.Bundle
+import android.text.Editable
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.Menu
@@ -22,6 +23,8 @@ import java.util.concurrent.LinkedBlockingQueue
 class EditStoreFragment : Fragment() {
     private lateinit var mBinding: FragmentEditStoreBinding
     private var mActivity: MainActivity? = null
+    private var mIsEditMode: Boolean = false
+    private var mStoreEntity: StoreEntity? = null
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -33,10 +36,12 @@ class EditStoreFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val id = arguments?.getLong(getString(R.string.arg_id), 0)
-        if(id != null && id!=0L){
-            Toast.makeText(activity, id.toString(), Toast.LENGTH_SHORT).show()
-        }else{
-            Toast.makeText(activity, id.toString(), Toast.LENGTH_SHORT).show()
+        if (id != null && id != 0L) {
+            mIsEditMode = true
+            getStore(id)
+        } else {
+            mIsEditMode = false
+            mStoreEntity = StoreEntity(name = "", phone = "", photoUrl = "")
         }
         mActivity = activity as? MainActivity  //conseguir actividad y castearla
         mActivity?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -51,6 +56,28 @@ class EditStoreFragment : Fragment() {
         }
     }
 
+    private fun getStore(id: Long) {
+        val queue = LinkedBlockingQueue<StoreEntity?>()
+        Thread {
+            mStoreEntity = StoreApplication.database.storeDao().getStoreById(id)
+            queue.add(mStoreEntity)
+        }.start()
+        queue.take()?.let {
+            setUiStore(it)
+        }
+    }
+
+    private fun setUiStore(storeEntity: StoreEntity) {
+        with(mBinding) {
+            etName.setText(storeEntity.name)
+            etPhone.setText(storeEntity.phone)
+            etWebsite.setText(storeEntity.website)
+            etPhotoUrl.setText(storeEntity.photoUrl)
+        }
+    }
+
+    private fun String.editable(): Editable = Editable.Factory.getInstance().newEditable(this)
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.menu_save, menu)
         super.onCreateOptionsMenu(menu, inflater)
@@ -64,30 +91,50 @@ class EditStoreFragment : Fragment() {
             }
 
             R.id.action_save -> {
-                val store = StoreEntity(
+                if (mStoreEntity != null) {
+                    /*val store = StoreEntity(
                     name = mBinding.etName.text.toString().trim(),
                     phone = mBinding.etPhone.toString().trim(),
                     website = mBinding.etWebsite.toString().trim(),
                     photoUrl = mBinding.etPhotoUrl.toString().trim()
-                )
-                val queue = LinkedBlockingQueue<Long?>()
-                Thread {
-                    store.id = StoreApplication.database.storeDao().addStore(store)
-                    queue.add(store.id)
-                }.start()
-                queue.take()?.let {
-                    mActivity?.addStore(store)
-                    hideKeyboard()
-                   /*Snackbar.make(
-                        mBinding.root,
-                        getString(R.string.edit_store_message_save_success),
-                        Snackbar.LENGTH_SHORT
-                    ).show()*/
-                    Toast.makeText(mActivity, R.string.edit_store_message_save_success, Toast.LENGTH_SHORT).show()
-                    mActivity?.onBackPressedDispatcher?.onBackPressed()
+                )*/
+                    with(mStoreEntity!!) {
+                        name = mBinding.etName.text.toString().trim()
+                        phone = mBinding.etPhone.toString().trim()
+                        website = mBinding.etWebsite.toString().trim()
+                        photoUrl = mBinding.etPhotoUrl.toString().trim()
+                    }
+                    val queue = LinkedBlockingQueue<StoreEntity>()
+                    Thread {
+                        if (mIsEditMode) StoreApplication.database.storeDao()
+                            .updateStore(mStoreEntity!!)
+                        else mStoreEntity!!.id =
+                            StoreApplication.database.storeDao().addStore(mStoreEntity!!)
+                        queue.add(mStoreEntity)
+                    }.start()
+                    with(queue.take()) {
+                        if (mIsEditMode) {
+                            mActivity?.updateStore(this)
+                            Snackbar.make(
+                                mBinding.root,
+                                R.string.edit_store_message_update_success,
+                                Snackbar.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            mActivity?.addStore(this)
+                            Toast.makeText(
+                                mActivity,
+                                R.string.edit_store_message_save_success,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            mActivity?.onBackPressedDispatcher?.onBackPressed()
+                        }
+                        hideKeyboard()
+                    }
                 }
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -101,6 +148,7 @@ class EditStoreFragment : Fragment() {
         hideKeyboard()
         super.onDestroyView()
     }
+
     override fun onDestroy() {
         mActivity?.supportActionBar?.setDisplayHomeAsUpEnabled(false)
         mActivity?.supportActionBar?.title = getString(R.string.app_name)
