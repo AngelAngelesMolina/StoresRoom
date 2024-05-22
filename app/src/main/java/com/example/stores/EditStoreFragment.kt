@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.stores.databinding.FragmentEditStoreBinding
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputLayout
 import java.util.concurrent.LinkedBlockingQueue
 
 
@@ -26,8 +27,7 @@ class EditStoreFragment : Fragment() {
     private var mIsEditMode: Boolean = false
     private var mStoreEntity: StoreEntity? = null
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         mBinding = FragmentEditStoreBinding.inflate(inflater, container, false)
         return mBinding.root
@@ -48,11 +48,18 @@ class EditStoreFragment : Fragment() {
         mActivity?.supportActionBar?.title = getString(R.string.edit_store_title_add)
         setHasOptionsMenu(true) //tener acceso al menu
         mBinding.etPhotoUrl.addTextChangedListener {
-            Glide.with(this)
-                .load(mBinding.etPhotoUrl.text.toString())
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .centerCrop()
-                .into(mBinding.imgPhoto)
+            Glide.with(this).load(mBinding.etPhotoUrl.text.toString())
+                .diskCacheStrategy(DiskCacheStrategy.ALL).centerCrop().into(mBinding.imgPhoto)
+        }
+
+        mBinding.etName.addTextChangedListener() {
+                validateFields(mBinding.tilName)
+        }
+        mBinding.etPhone.addTextChangedListener() {
+                validateFields(mBinding.tilPhone)
+        }
+        mBinding.etPhotoUrl.addTextChangedListener() {
+                validateFields(mBinding.tilPhotoUrl)
         }
     }
 
@@ -86,13 +93,13 @@ class EditStoreFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
+                hideKeyboard()
                 mActivity?.onBackPressedDispatcher?.onBackPressed()
                 true
             }
 
             R.id.action_save -> {
-                if (mStoreEntity != null) {
-                    /*val store = StoreEntity(
+                if (mStoreEntity != null && validateFields(mBinding.tilPhotoUrl, mBinding.tilPhone, mBinding.tilName)) {/*val store = StoreEntity(
                     name = mBinding.etName.text.toString().trim(),
                     phone = mBinding.etPhone.toString().trim(),
                     website = mBinding.etWebsite.toString().trim(),
@@ -139,6 +146,39 @@ class EditStoreFragment : Fragment() {
         }
     }
 
+    private fun validateFields(): Boolean {
+        var isValid = true
+        if (mBinding.etPhotoUrl.text.toString().trim().isEmpty()) {
+            mBinding.tilPhotoUrl.error = getString(R.string.helper_required)
+            mBinding.etPhotoUrl.requestFocus()
+            isValid = false;
+        }
+        if (mBinding.etPhone.text.toString().trim().isEmpty()) {
+            mBinding.tilPhone.error = getString(R.string.helper_required)
+            mBinding.etPhone.requestFocus()
+            isValid = false;
+        }
+        if (mBinding.etName.text.toString().trim().isEmpty()) {
+            mBinding.tilName.error = getString(R.string.helper_required)
+            mBinding.etName.requestFocus()
+            isValid = false;
+        }
+        return isValid
+    }
+private fun validateFields(vararg textFields: TextInputLayout):Boolean{
+    var isValid =  true;
+    for(textField in textFields){
+        if(textField.editText?.text.toString().trim().isEmpty()){
+          textField.error = getString(R.string.helper_required)
+            //textField.editText.requestFocus()
+          isValid = false
+        }else{
+            textField.error = null
+        }
+    }
+    if(!isValid) Snackbar.make(mBinding.root, R.string.edit_store_message_valid, Snackbar.LENGTH_SHORT).show()
+    return isValid;
+}
     private fun hideKeyboard() {
         val imm = mActivity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(requireView().windowToken, 0)
