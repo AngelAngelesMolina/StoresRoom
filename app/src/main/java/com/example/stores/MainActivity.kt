@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
 
     private fun launchEditFragment(args: Bundle? = null) {
         val fragment = EditStoreFragment()
-        if(args != null) fragment.arguments = args
+        if (args != null) fragment.arguments = args
         val fragmentManager = supportFragmentManager
         val fragmentTransaction = fragmentManager.beginTransaction()
 
@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
             StoreApplication.database.storeDao().updateStore(storeEntity)
             queue.add(storeEntity)
         }.start()
-        mAdapter.update(queue.take())
+        updateStore(queue.take())
     }
 
     override fun onDeleteStore(storeEntity: StoreEntity) {

@@ -43,23 +43,37 @@ class EditStoreFragment : Fragment() {
             mIsEditMode = false
             mStoreEntity = StoreEntity(name = "", phone = "", photoUrl = "")
         }
+
+        setupActionBar()
+        setupTextFields()
+    }
+
+    private fun setupActionBar() {
         mActivity = activity as? MainActivity  //conseguir actividad y castearla
         mActivity?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        mActivity?.supportActionBar?.title = getString(R.string.edit_store_title_add)
+        if (mIsEditMode) mActivity?.supportActionBar?.title =
+            if (mIsEditMode) getString(R.string.edit_store_title_edit)
+            else getString(R.string.edit_store_title_add)
         setHasOptionsMenu(true) //tener acceso al menu
-        mBinding.etPhotoUrl.addTextChangedListener {
-            Glide.with(this).load(mBinding.etPhotoUrl.text.toString())
-                .diskCacheStrategy(DiskCacheStrategy.ALL).centerCrop().into(mBinding.imgPhoto)
-        }
+    }
 
-        mBinding.etName.addTextChangedListener() {
-                validateFields(mBinding.tilName)
-        }
-        mBinding.etPhone.addTextChangedListener() {
-                validateFields(mBinding.tilPhone)
-        }
-        mBinding.etPhotoUrl.addTextChangedListener() {
-                validateFields(mBinding.tilPhotoUrl)
+    private fun loadImage(url: String) {
+        Glide.with(this).load(url)
+            .diskCacheStrategy(DiskCacheStrategy.ALL).centerCrop().into(mBinding.imgPhoto)
+    }
+
+    private fun setupTextFields() {
+        with(mBinding) {
+            etName.addTextChangedListener() {
+                validateFields(tilName)
+            }
+            etPhone.addTextChangedListener() {
+                validateFields(tilPhone)
+            }
+            etPhotoUrl.addTextChangedListener() {
+                loadImage(etPhotoUrl.text.toString())
+                validateFields(tilPhotoUrl)
+            }
         }
     }
 
@@ -99,7 +113,12 @@ class EditStoreFragment : Fragment() {
             }
 
             R.id.action_save -> {
-                if (mStoreEntity != null && validateFields(mBinding.tilPhotoUrl, mBinding.tilPhone, mBinding.tilName)) {/*val store = StoreEntity(
+                if (mStoreEntity != null && validateFields(
+                        mBinding.tilPhotoUrl,
+                        mBinding.tilPhone,
+                        mBinding.tilName
+                    )
+                ) {/*val store = StoreEntity(
                     name = mBinding.etName.text.toString().trim(),
                     phone = mBinding.etPhone.toString().trim(),
                     website = mBinding.etWebsite.toString().trim(),
@@ -107,9 +126,9 @@ class EditStoreFragment : Fragment() {
                 )*/
                     with(mStoreEntity!!) {
                         name = mBinding.etName.text.toString().trim()
-                        phone = mBinding.etPhone.toString().trim()
-                        website = mBinding.etWebsite.toString().trim()
-                        photoUrl = mBinding.etPhotoUrl.toString().trim()
+                        phone = mBinding.etPhone.text.toString().trim()
+                        website = mBinding.etWebsite.text.toString().trim()
+                        photoUrl = mBinding.etPhotoUrl.text.toString().trim()
                     }
                     val queue = LinkedBlockingQueue<StoreEntity>()
                     Thread {
@@ -134,9 +153,9 @@ class EditStoreFragment : Fragment() {
                                 R.string.edit_store_message_save_success,
                                 Toast.LENGTH_SHORT
                             ).show()
+                            hideKeyboard()
                             mActivity?.onBackPressedDispatcher?.onBackPressed()
                         }
-                        hideKeyboard()
                     }
                 }
                 true
@@ -165,20 +184,26 @@ class EditStoreFragment : Fragment() {
         }
         return isValid
     }
-private fun validateFields(vararg textFields: TextInputLayout):Boolean{
-    var isValid =  true;
-    for(textField in textFields){
-        if(textField.editText?.text.toString().trim().isEmpty()){
-          textField.error = getString(R.string.helper_required)
-            //textField.editText.requestFocus()
-          isValid = false
-        }else{
-            textField.error = null
+
+    private fun validateFields(vararg textFields: TextInputLayout): Boolean {
+        var isValid = true;
+        for (textField in textFields) {
+            if (textField.editText?.text.toString().trim().isEmpty()) {
+                textField.error = getString(R.string.helper_required)
+                //textField.editText.requestFocus()
+                isValid = false
+            } else {
+                textField.error = null
+            }
         }
+        if (!isValid) Snackbar.make(
+            mBinding.root,
+            R.string.edit_store_message_valid,
+            Snackbar.LENGTH_SHORT
+        ).show()
+        return isValid;
     }
-    if(!isValid) Snackbar.make(mBinding.root, R.string.edit_store_message_valid, Snackbar.LENGTH_SHORT).show()
-    return isValid;
-}
+
     private fun hideKeyboard() {
         val imm = mActivity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(requireView().windowToken, 0)
