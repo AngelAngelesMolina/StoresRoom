@@ -1,9 +1,14 @@
 package com.example.stores
 
+import android.content.DialogInterface
+import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.stores.databinding.ActivityMainBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.util.concurrent.LinkedBlockingQueue
 
 class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
@@ -85,12 +90,59 @@ class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
     }
 
     override fun onDeleteStore(storeEntity: StoreEntity) {
-        val queue = LinkedBlockingQueue<StoreEntity>()
-        Thread {
-            StoreApplication.database.storeDao().deleteStore(storeEntity)
-            queue.add(storeEntity)
-        }.start()
-        mAdapter.delete(queue.take())
+        val items = arrayOf("Eliminar", "Llamar", "Ir al sitioweb")
+        MaterialAlertDialogBuilder(this).setTitle(R.string.dialog_options_title)
+            .setItems(items) { _, i ->
+                when (i) {
+                    0 -> confirmDelete(storeEntity)
+                    1 -> dial(storeEntity.phone)
+                    2 -> goToWebsite(storeEntity.website)
+                }
+            }
+            .show()
+
+    }
+
+    private fun goToWebsite(website: String) {
+        if (website.isEmpty()) {
+            Toast.makeText(this, R.string.main_error_no_website, Toast.LENGTH_LONG).show()
+        } else {
+            val websiteIntent = Intent().apply {
+                action = Intent.ACTION_VIEW
+                data = Uri.parse(website)
+            }
+            if (websiteIntent.resolveActivity(packageManager) != null)
+                startActivity(websiteIntent)
+            else
+                Toast.makeText(this, R.string.main_error_no_resolve, Toast.LENGTH_LONG).show()
+            //startActivity(websiteIntent)
+        }
+    }
+
+    private fun dial(phone: String) {
+        val callIntent =
+            Intent().apply {
+                action = Intent.ACTION_DIAL
+                data = Uri.parse("tel:$phone")
+            }
+        if (callIntent.resolveActivity(packageManager) != null)
+            startActivity(callIntent)
+        else
+            Toast.makeText(this, R.string.main_error_no_resolve, Toast.LENGTH_LONG).show()
+    }
+
+    private fun confirmDelete(storeEntity: StoreEntity) {
+        MaterialAlertDialogBuilder(this).setTitle(R.string.dialog_delete_title)
+            .setPositiveButton(R.string.dialog_delete_confirm) { _, _ ->
+                val queue = LinkedBlockingQueue<StoreEntity>()
+                Thread {
+                    StoreApplication.database.storeDao().deleteStore(storeEntity)
+                    queue.add(storeEntity)
+                }.start()
+                mAdapter.delete(queue.take())
+            }
+            .setNegativeButton(R.string.dialog_delete_cancel, null)
+            .show()
     }
 
     override fun hideFab(isVisible: Boolean) {
