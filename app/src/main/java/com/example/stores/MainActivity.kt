@@ -1,6 +1,5 @@
 package com.example.stores
 
-import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -62,7 +61,7 @@ class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
 
     private fun setupRv() {
         mAdapter = StoreAdapter(mutableListOf(), this)
-        mGridLayout = GridLayoutManager(this, 2)
+        mGridLayout = GridLayoutManager(this, resources.getInteger(R.integer.main_columns))
         getStores()
         mBinding.rv.apply {
             setHasFixedSize(true)
@@ -90,7 +89,7 @@ class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
     }
 
     override fun onDeleteStore(storeEntity: StoreEntity) {
-        val items = arrayOf("Eliminar", "Llamar", "Ir al sitioweb")
+        val items = resources.getStringArray(R.array.array_options_item)
         MaterialAlertDialogBuilder(this).setTitle(R.string.dialog_options_title)
             .setItems(items) { _, i ->
                 when (i) {
@@ -103,20 +102,12 @@ class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
 
     }
 
-    private fun goToWebsite(website: String) {
-        if (website.isEmpty()) {
-            Toast.makeText(this, R.string.main_error_no_website, Toast.LENGTH_LONG).show()
-        } else {
-            val websiteIntent = Intent().apply {
-                action = Intent.ACTION_VIEW
-                data = Uri.parse(website)
-            }
-            if (websiteIntent.resolveActivity(packageManager) != null)
-                startActivity(websiteIntent)
-            else
-                Toast.makeText(this, R.string.main_error_no_resolve, Toast.LENGTH_LONG).show()
-            //startActivity(websiteIntent)
-        }
+
+    private fun startIntent(intent: Intent) {
+        if (intent.resolveActivity(packageManager) != null)
+            startActivity(intent)
+        else
+            Toast.makeText(this, R.string.main_error_no_resolve, Toast.LENGTH_LONG).show()
     }
 
     private fun dial(phone: String) {
@@ -125,10 +116,19 @@ class MainActivity : AppCompatActivity(), OnClickListener, MainAux {
                 action = Intent.ACTION_DIAL
                 data = Uri.parse("tel:$phone")
             }
-        if (callIntent.resolveActivity(packageManager) != null)
-            startActivity(callIntent)
-        else
-            Toast.makeText(this, R.string.main_error_no_resolve, Toast.LENGTH_LONG).show()
+        startIntent(callIntent)
+    }
+
+    private fun goToWebsite(website: String) {
+        if (website.isEmpty()) {
+            Toast.makeText(this, R.string.main_error_no_website, Toast.LENGTH_LONG).show()
+        } else {
+            val websiteIntent = Intent().apply {
+                action = Intent.ACTION_VIEW
+                data = Uri.parse(website)
+            }
+            startIntent(websiteIntent)
+        }
     }
 
     private fun confirmDelete(storeEntity: StoreEntity) {

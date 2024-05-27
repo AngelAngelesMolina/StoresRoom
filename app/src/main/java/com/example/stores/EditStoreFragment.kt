@@ -12,10 +12,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.addTextChangedListener
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.stores.databinding.FragmentEditStoreBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
 import java.util.concurrent.LinkedBlockingQueue
@@ -104,11 +106,32 @@ class EditStoreFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        requireActivity().onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    MaterialAlertDialogBuilder(requireActivity())
+                        .setTitle(R.string.dialog_exit_title)
+                        .setMessage(R.string.dialog_exit_message)
+                        .setPositiveButton(R.string.dialog_exit_ok) { _, _ ->
+                            if (isEnabled) {
+                                isEnabled = false
+                                requireActivity().onBackPressedDispatcher.onBackPressed()
+                            }
+                        }
+                        .setNegativeButton(R.string.dialog_delete_cancel, null)
+                        .show()
+                }
+            })
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
                 hideKeyboard()
-                mActivity?.onBackPressedDispatcher?.onBackPressed()
+                requireActivity().onBackPressedDispatcher.onBackPressed()
                 true
             }
 
@@ -154,7 +177,7 @@ class EditStoreFragment : Fragment() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             hideKeyboard()
-                            mActivity?.onBackPressedDispatcher?.onBackPressed()
+                            requireActivity().onBackPressedDispatcher.onBackPressed()
                         }
                     }
                 }
